@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Your-GitBlog</title>
+        <description>GitBlog是一个简单易用的Markdown博客系统</description>
+        <link>/</link>
+        <atom:link href="//feed.xml" rel="self" type="application/rss+xml" />
+        <pubDate>2018-01-19 09:01:48</pubDate>
+        <lastBuildDate>2018-01-19 09:01:48</lastBuildDate>
+        <generator>Gitblog v1.0</generator>
+                <item>
+            <title>Hadoop学习指南（集群运维篇）</title>
+            <description>
+            &lt;h1&gt;Hadoop学习指南（集群运维篇）&lt;/h1&gt;
+&lt;hr /&gt;
+&lt;h2&gt;前言&lt;/h2&gt;
+&lt;p&gt;本篇介绍Hadoop的一些常用知识。要说和网上其他manual的区别，那就是这是笔者写的一套成体系的文档，不是随心所欲而作。&lt;/p&gt;
+&lt;h2&gt;常用HDFS命令&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;hadoop fs -ls URI&lt;/li&gt;
+&lt;li&gt;hadoop fs -du -h URI&lt;/li&gt;
+&lt;li&gt;hadoop fs -cat URI [文件较大，hadoop fs -cat xxxx | head]&lt;/li&gt;
+&lt;li&gt;hadoop fs -put URI&lt;/li&gt;
+&lt;li&gt;hadoop fs -get URI&lt;/li&gt;
+&lt;li&gt;hadoop fs -rmr URI&lt;/li&gt;
+&lt;li&gt;hadoop fs -stat %b,%o,%n,%r,%y URI (%b：文件大小, %o：Block 大小, %n：文件名, %r：副本个数, %y 或%Y：最后一次修改日期和时间)&lt;/li&gt;
+&lt;li&gt;hadoop fs -tail [-f] URI&lt;/li&gt;
+&lt;li&gt;hdfs dfsadmin -report&lt;/li&gt;
+&lt;li&gt;hadoop fs -appendToFile URI1[,URI2,...] URI（hadoop fs -appendToFile helloCopy1.txt helloCopy2.txt /user/tmp/hello.txt）&lt;/li&gt;
+&lt;li&gt;hadoop fsck / -files -blocks&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;关键的clusterID&lt;/h2&gt;
+&lt;p&gt;这是hadoop集群的id号，只有拥有相同id的各个节点才能加入的这个集群中来。&lt;/p&gt;
+&lt;p&gt;大致是在：hdfs namenode -format命令之后生成这个id。&lt;/p&gt;
+&lt;p&gt;很多情况下，你的集群如果可能拥有不同的id号哦。就比如：&lt;/p&gt;
+&lt;p&gt;启动datanode是遇到： “DataNode: Initialization failed for Block pool”&lt;/p&gt;
+&lt;p&gt;此时应当查看：
+cat /home/deploy/hadoop-2.7.1/hdfs/name/current/VERSION&lt;/p&gt;
+&lt;p&gt;cat /home/deploy/hadoop-2.7.1/hdfs/data/current/VERSION&lt;/p&gt;
+&lt;p&gt;一个是datanode数据的文件夹，一个是namenode数据的文件夹。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#Fri Feb 17 15:48:44 CST 2017
+namespaceID=74707331
+clusterID=CID-e3e7c80e-3099-461d-9fa9-404f4910def5
+cTime=0
+storageType=NAME_NODE
+blockpoolID=BP-1729560578-192.168.20.2-1487317724421
+layoutVersion=-63&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;#Thu Dec 22 09:57:13 CST 2016
+storageID=DS-63997596-6d60-46e8-a08c-94426208f9d9
+clusterID=CID-076b4e8a-9ed9-47e9-b6e0-4c16440c33e8
+cTime=0
+datanodeUuid=3ae0642e-2d72-4b45-ba63-de5e6ca1c7c7
+storageType=DATA_NODE
+layoutVersion=-56&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;添加删除节点&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://my.oschina.net/MrMichael/blog/291802&quot;&gt;Hadoop添加删除节点&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;重启丢失节点&lt;/h2&gt;
+&lt;h3&gt;子节点DataNode丢失&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;sbin/hadoop-daemon.sh start datanode&lt;/code&gt;&lt;/p&gt;
+&lt;h3&gt;子节点NodeManager丢失&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;sbin/yarn-daemon.sh start nodemanager&lt;/code&gt;&lt;/p&gt;
+&lt;h3&gt;主节点丢失&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;sbin/start-all.sh&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;or&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sbin/hadoop-daemon.sh start namenode&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sbin/hadoop-daemon.sh start secondarynamenode&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;sbin/yarn-daemon.sh start resourcemanager&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;配置文件出错&lt;/h2&gt;
+&lt;p&gt;管理hadoop集群，会经常遇到配置文件的相关问题。这里举一个例子，比如yarn的nodemanager起不来的问题。&lt;/p&gt;
+&lt;p&gt;yarn的相关配置文件有两个：yarn-site.xml和yarn-env.sh&lt;/p&gt;
+&lt;p&gt;在yarn-site.xml文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;property&amp;gt;
+     &amp;lt;name&amp;gt;yarn.nodemanager.resource.memory-mb&amp;lt;/name&amp;gt;
+     &amp;lt;value&amp;gt;1024&amp;lt;/value&amp;gt;
+&amp;lt;/property&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;在yarn-env.sh文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;JAVA_HEAP_MAX=-Xmx1024m&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;应该保证yarn-site.xml中的memory-mb数值比yarn-env.sh中JAVA_HEAP_MAX的数值小。yarn-site.xml的配置是要求nodemanager启动的最少内存，低于该值无法启动。实际启动时，使用yarn-env.sh中的配置。修改比如：&lt;code&gt;JAVA_HEAP_MAX=-Xmx2048m&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;no xxx to stop&lt;/h2&gt;
+&lt;p&gt;hadoop会经常有这个问题，大概就是没有找到该进程的PID文件，所以报错。&lt;/p&gt;
+&lt;p&gt;具体参见连接：
+&lt;a href=&quot;http://blog.csdn.net/gyqjn/article/details/50805472&quot;&gt;解决关闭Hadoop时no namenode to stop异常&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;每次启动hadoop（&lt;code&gt;./start-all.sh&lt;/code&gt;）时，PID文件被生成，存储进程号。关闭时，PID文件被删除。&lt;/p&gt;
+&lt;p&gt;在hadoop2.7.1版本中，关于HADOOP_PID_DIR(文件路径：../etc/hadoop/hadoop-env.sh)的描述是这样的：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# The directory where pid files are stored. /tmp by default.
+# NOTE: this should be set to a directory that can only be written to by
+#       the user that will run the hadoop daemons.  Otherwise there is the
+#       potential for a symlink attack.
+export HADOOP_PID_DIR=${HADOOP_PID_DIR}
+export HADOOP_SECURE_DN_PID_DIR=${HADOOP_PID_DIR}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;最好将PID文件放在只写目录中。&lt;/p&gt;
+&lt;h2&gt;关于mapred-site.xml配置&lt;/h2&gt;
+&lt;p&gt;参见blog:&lt;a href=&quot;https://www.iteblog.com/archives/1945&quot;&gt;《如何给运行在Yarn的MapReduce作业配置内存》&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;参考资料&lt;/h2&gt;
+&lt;p&gt;-&lt;a href=&quot;https://www.iteblog.com/archives/1945&quot;&gt;如何给运行在Yarn的MapReduce作业配置内存&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://segmentfault.com/a/1190000002672666&quot;&gt;hadoop HDFS常用文件操作命令&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://book.51cto.com/art/201409/452359.htm&quot;&gt;HDFS 文件操作命令&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;            </description>
+            <pubDate>2018-01-19 09:26:21</pubDate>
+            <link>//blog/posts/Hadoop%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97%28%E9%9B%86%E7%BE%A4%E8%BF%90%E7%BB%B4%E7%AF%87%29.html</link>
+            <guid isPermaLink="true">//blog/posts/Hadoop%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97%28%E9%9B%86%E7%BE%A4%E8%BF%90%E7%BB%B4%E7%AF%87%29.html</guid>
+                    </item>
+                <item>
+            <title>欢迎使用GitBlog</title>
+            <description>
+            &lt;!--
+author: jockchou
+head: http://pingodata.qiniudn.com/jockchou-avatar.jpg
+date: 2015-07-31
+title: 欢迎使用GitBlog
+tags: GitBlog
+images: http://pingodata.qiniudn.com/cube2.jpg
+category: GitBlog
+status: publish
+summary: GitBlog是一个简单易用的Markdown博客系统，它不需要数据库，没有管理后台功能，更新博客只需要添加你写好的Markdown文件即可。
+--&gt;
+&lt;h2&gt;一. 简介&lt;/h2&gt;
+&lt;p&gt;GitBlog是一个简单易用的Markdown博客系统，它不需要数据库，没有管理后台功能，更新博客只需要添加你写好的Markdown文件即可。它摆脱了在线编辑器排版困难，无法实时预览的缺点，一切都交给Markdown来完成，一篇博客就是一个Markdown文件。同时也支持评论，代码高亮，数学公式，页面PV统计等常用功能。GitBlog提供了不同的主题样式，你可以根据自己的喜好配置，如果你想自己制作博客主题，也是非常容易的。GitBlog还支持整站静态导出，你完全可以导出整站静态网页部署到Github Pages。&lt;/p&gt;
+&lt;h2&gt;二. 功能特点&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;使用Markdown  &lt;/li&gt;
+&lt;li&gt;评论框  &lt;/li&gt;
+&lt;li&gt;代码高亮  &lt;/li&gt;
+&lt;li&gt;PV统计  &lt;/li&gt;
+&lt;li&gt;Latex数学公式  &lt;/li&gt;
+&lt;li&gt;自制主题  &lt;/li&gt;
+&lt;li&gt;响应式  &lt;/li&gt;
+&lt;li&gt;全站静态导出  &lt;/li&gt;
+&lt;li&gt;良好的SEO  &lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;三. GitBlog优势&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;无需数据库，系统更轻量，移植更方便  &lt;/li&gt;
+&lt;li&gt;使用Markdown编写，摆脱后台编辑排版困难，无法实时预览的缺点  &lt;/li&gt;
+&lt;li&gt;可全站静态导出  &lt;/li&gt;
+&lt;li&gt;配置灵活，可自由开关某些功能  &lt;/li&gt;
+&lt;li&gt;多主题支持，可自制主题  &lt;/li&gt;
+&lt;li&gt;博客，分类，标签，归档  &lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;四. 环境要求&lt;/h2&gt;
+&lt;p&gt;PHP 5.2.4+&lt;/p&gt;
+&lt;h2&gt;五. 安装步骤&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;下载GitBlog源代码  &lt;/li&gt;
+&lt;li&gt;解压上传到你的PHP网站根目录  &lt;/li&gt;
+&lt;li&gt;打开浏览器，访问网站首页  &lt;/li&gt;
+&lt;li&gt;上传Markdown文件到&lt;code&gt;posts&lt;/code&gt;文件夹  &lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;六. 详细说明&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/install.md&quot;&gt;1. 安装&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/struct.md&quot;&gt;2. 目录结构&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/config.md&quot;&gt;3. 配置说明&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/edit.md&quot;&gt;4. 编写博客&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/other-func.md&quot;&gt;5. 评论，订阅，统计等&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/cache.md&quot;&gt;6. 缓存机制&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/export.md&quot;&gt;7. 全站静态导出&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/theme.md&quot;&gt;8. 主题制作&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/nginx.md&quot;&gt;9. 在Nginx上运行GitBlog&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/apache.md&quot;&gt;10. 在Apache上运行GitBlog&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/sae.md&quot;&gt;11. 在SAE上运行GitBlog&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/github-pages.md&quot;&gt;12. 使用GitBlog和Github Pages搭建博客&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/update.md&quot;&gt;13. Gitblog升级&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://github.com/jockchou/gitblogdoc/tree/master/posts/gitblog/wordpress.md&quot;&gt;14. 从wordpress导入&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;七. 问题及bug反馈&lt;/h2&gt;
+&lt;p&gt;如果在实际使用过程中对GitBlog有新的功能需求，或者在使用GitBlog的过程中发现了Bug，欢迎反馈给我。可以直接在Github上提交，也可以发邮件至&lt;code&gt;164068300[AT]qq.com&lt;/code&gt;与我取得联系，我将及时回复。如果你自己制作了漂亮好用的主题，也非常欢迎你提交给我，我会在这里展示你的主题链接。如果你正在使用GitBlog，也可以告诉我，我将也会在这里列出使用者名单。如果你想和其他GitBlog使用者讨论交流，欢迎加入QQ群&lt;code&gt;84692078&lt;/code&gt;。&lt;/p&gt;
+&lt;h2&gt;八. 使用者列表&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://blog.hiweeds.net&quot;&gt;Weeds&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://xiaochengzi.sinaapp.com&quot;&gt;橙子&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://jockchou.com&quot;&gt;jockchou&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://github.com/jockchou/gitblogdoc&quot;&gt;GitBlog Doc&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://zxy.link&quot;&gt;zxy&lt;/a&gt;  &lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;九. 感谢&lt;/h2&gt;
+&lt;p&gt;GitBlog的成长需要喜欢Markdown，喜欢写博客的各位亲们支持！感谢你们使用GitBlog，感激你们对Gitblog的良好建议与Bug反馈。&lt;/p&gt;
+&lt;p&gt;QQ群：&lt;code&gt;84692078&lt;/code&gt;&lt;br /&gt;
+作者邮箱：&lt;code&gt;164068300[AT]qq.com&lt;/code&gt;    &lt;/p&gt;            </description>
+            <pubDate>2018-01-19 09:07:12</pubDate>
+            <link>//blog/welcome.html</link>
+            <guid isPermaLink="true">//blog/welcome.html</guid>
+                                               <category>GitBlog</category>
+                                    </item>
+            </channel>
+</rss>
